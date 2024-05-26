@@ -1,0 +1,72 @@
+<!-- app/templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Content Generator and Analyzer</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">AI-Powered Content Generator and Analyzer</h1>
+        <form id="content-form">
+            <div class="form-group">
+                <label for="topic">Enter Topic</label>
+                <input type="text" class="form-control" id="topic" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Generate Content</button>
+        </form>
+        <form id="twitter-form" class="mt-5">
+            <div class="form-group">
+                <label for="term">Search Twitter for Term</label>
+                <input type="text" class="form-control" id="term" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Search Twitter</button>
+        </form>
+        <div id="result" class="mt-5">
+            <h2>Generated Content</h2>
+            <p id="generated-content"></p>
+            <h2>Analysis Results</h2>
+            <ul>
+                <li>Readability: <span id="readability"></span></li>
+                <li>Sentiment: <span id="sentiment"></span></li>
+                <li>SEO: <span id="seo"></span></li>
+            </ul>
+            <h2>Twitter Sentiment Analysis</h2>
+            <ul id="twitter-sentiments"></ul>
+        </div>
+    </div>
+    <script>
+        document.getElementById('content-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const topic = document.getElementById('topic').value;
+            const payload = { topic: topic };
+
+            const response = await fetch('/generate/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            document.getElementById('generated-content').innerText = data.generated_text;
+            // You may add code to fetch and display analysis results
+        });
+
+        document.getElementById('twitter-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const term = document.getElementById('term').value;
+            const response = await fetch('/search_twitter/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ term })
+            });
+            const data = await response.json();
+            // Here we assume that the server returns a message indicating the process is ongoing
+            console.log(data.message);
+            // You may add code to fetch and display twitter sentiment analysis results
+        });
+    </script>
+</body>
+</html>
