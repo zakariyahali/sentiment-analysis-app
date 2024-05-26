@@ -3,6 +3,6 @@ sqlalchemy
 psycopg2-binary
 openai
 requests
-beautifulsoup4
 uvicorn
 python-dotenv
+

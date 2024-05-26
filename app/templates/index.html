@@ -18,12 +18,12 @@
             </div>
             <button type="submit" class="btn btn-primary">Generate Content</button>
         </form>
-        <form id="twitter-form" class="mt-5">
+        <form id="analyze-form" class="mt-5">
             <div class="form-group">
-                <label for="term">Search Twitter for Term</label>
-                <input type="text" class="form-control" id="term" required>
+                <label for="content">Enter Content for Analysis</label>
+                <textarea class="form-control" id="content" rows="4" required></textarea>
             </div>
-            <button type="submit" class="btn btn-primary">Search Twitter</button>
+            <button type="submit" class="btn btn-primary">Analyze Content</button>
         </form>
         <div id="result" class="mt-5">
             <h2>Generated Content</h2>
@@ -32,10 +32,7 @@
             <ul>
                 <li>Readability: <span id="readability"></span></li>
                 <li>Sentiment: <span id="sentiment"></span></li>
-                <li>SEO: <span id="seo"></span></li>
             </ul>
-            <h2>Twitter Sentiment Analysis</h2>
-            <ul id="twitter-sentiments"></ul>
         </div>
     </div>
     <script>
@@ -51,21 +48,21 @@
             });
             const data = await response.json();
             document.getElementById('generated-content').innerText = data.generated_text;
-            // You may add code to fetch and display analysis results
         });
 
-        document.getElementById('twitter-form').addEventListener('submit', async (e) => {
+        document.getElementById('analyze-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const term = document.getElementById('term').value;
-            const response = await fetch('/search_twitter/', {
+            const content = document.getElementById('content').value;
+            const payload = { content: content };
+
+            const response = await fetch('/analyze/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ term })
+                body: JSON.stringify(payload)
             });
             const data = await response.json();
-            // Here we assume that the server returns a message indicating the process is ongoing
-            console.log(data.message);
-            // You may add code to fetch and display twitter sentiment analysis results
+            document.getElementById('readability').innerText = data.readability;
+            document.getElementById('sentiment').innerText = data.sentiment;
         });
     </script>
 </body>

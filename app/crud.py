@@ -1,28 +1,28 @@
 # app/crud.py
 
 from sqlalchemy.orm import Session
-import models
+import models, schemas
 
-def create_generated_content(db: Session, content: str):
-    db_content = models.Content(text=content)
-    db.add(db_content)
+def create_search_term(db: Session, term: str):
+    db_search_term = models.SearchTerm(term=term)
+    db.add(db_search_term)
     db.commit()
-    db.refresh(db_content)
-    return db_content
+    db.refresh(db_search_term)
+    return db_search_term
 
-def create_analysis_result(db: Session, content_id: int, readability: str, sentiment: str, seo: str):
-    db_result = models.AnalysisResult(content_id=content_id, readability=readability, sentiment=sentiment, seo=seo)
-    db.add(db_result)
+def create_generated_content(db: Session, content: str, search_term_id: int):
+    db_generated_content = models.GeneratedContent(content=content, search_term_id=search_term_id)
+    db.add(db_generated_content)
     db.commit()
-    db.refresh(db_result)
-    return db_result
+    db.refresh(db_generated_content)
+    return db_generated_content
 
-def create_tweet(db: Session, term: str, tweet: str):
-    db_tweet = models.Tweet(term=term, tweet=tweet)
-    db.add(db_tweet)
+def create_sentiment_analysis(db: Session, readability: str, sentiment: str, search_term_id: int):
+    db_sentiment_analysis = models.SentimentAnalysis(readability=readability, sentiment=sentiment, search_term_id=search_term_id)
+    db.add(db_sentiment_analysis)
     db.commit()
-    db.refresh(db_tweet)
-    return db_tweet
+    db.refresh(db_sentiment_analysis)
+    return db_sentiment_analysis
 
-def get_tweets_by_term(db: Session, term: str):
-    return db.query(models.Tweet).filter(models.Tweet.term == term).all()
+def get_search_term(db: Session, term: str):
+    return db.query(models.SearchTerm).filter(models.SearchTerm.term == term).first()

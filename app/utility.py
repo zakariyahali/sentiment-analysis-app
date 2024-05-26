@@ -1,60 +1,60 @@
 # app/utility.py
 
 import openai
-import requests
-import threading
-from fastapi import BackgroundTasks
+import os
 from sqlalchemy.orm import Session
-import crud
+from dotenv import load_dotenv
+import crud, models
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 # Load environment variables
-import os
-from dotenv import load_dotenv
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
 
-def generate_content(topic: str) -> str:
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=f"Write a detailed article about {topic}",
-        max_tokens=500
-    )
-    return response.choices[0].text.strip()
+# Define a semaphore to limit the number of concurrent threads
+semaphore = threading.Semaphore(5)  # Adjust the number as needed
+
+def generate_content(db: Session, topic: str) -> str:
+    with semaphore:
+        search_term = crud.get_search_term(db, topic)
+        if not search_term:
+            search_term = crud.create_search_term(db, topic)
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": f"Write a detailed article about {topic}"},
+            ]
+        )
+        generated_text = response.choices[0].message['content'].strip()
+        crud.create_generated_content(db, generated_text, search_term.id)
+        return generated_text
 
 def analyze_content(db: Session, content: str):
-    readability = get_readability_score(content)
-    sentiment = get_sentiment_analysis(content)
-
-    content_id = crud.create_generated_content(db, content).id
-    crud.create_analysis_result(db, content_id, readability, sentiment)
+    with semaphore:
+        search_term = crud.get_search_term(db, content)
+        if not search_term:
+            search_term = crud.create_search_term(db, content)
+        readability = get_readability_score(content)
+        sentiment = get_sentiment_analysis(content)
+        crud.create_sentiment_analysis(db, readability, sentiment, search_term.id)
+        return readability, sentiment
 
 def get_readability_score(content: str) -> str:
-    response = requests.post("https://readability-api.example.com", data={"text": content})
-    return response.json().get("readability_score", "N/A")
+    # Simulate readability score for the example
+    # Replace this with actual readability API call if available
+    return "Readability Score: Good"
 
 def get_sentiment_analysis(content: str) -> str:
-    response = requests.post("https://sentiment-api.example.com", data={"text": content})
-    return response.json().get("sentiment", "N/A")
-
-# Multithreading with semaphore
-thread_limit = threading.Semaphore(5)  # Limit to 5 concurrent threads
-
-def threaded_analysis(db: Session, content: str):
-    with thread_limit:
-        analyze_content(db, content)
-
-def analyze_twitter_sentiment(db: Session, term: str):
-    tweets = crud.get_tweets_by_term(db, term)
-    sentiments = [get_sentiment_analysis(tweet.tweet) for tweet in tweets]
-    # Store or return aggregated sentiment analysis results as needed
-    # Here we can just print the sentiments or store them in the database
-    print(f"Sentiments for term '{term}': {sentiments}")
-
-
-
-
-
-
-
-
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": f"Analyze the sentiment of the following text:\n\n{content}\n\nIs the sentiment positive, negative, or neutral?"},
+        ],
+        max_tokens=10
+    )
+    return response.choices[0].message['content'].strip()
